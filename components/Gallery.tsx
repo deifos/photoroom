@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PhotoroomMasonry } from './PhotoroomMasonry';
-import { ImageLightbox } from './ImageLightbox';
+import { PhotoroomMasonry } from './photoroomMasonry';
+import { ImageLightbox } from './imageLightbox';
 import { useUpload } from '@/contexts/UploadContext';
 
 interface Image {

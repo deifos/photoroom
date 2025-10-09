@@ -5,7 +5,7 @@ import { Button } from '@heroui/button';
 import { Upload } from 'lucide-react';
 import { useUpload } from '@/contexts/UploadContext';
 import { useSession } from '@/lib/auth-client';
-import { AuthDialog } from './AuthDialog';
+import { AuthDialog } from './authDialog';
 
 export function ImageUpload() {
   const [uploading, setUploading] = useState(false);

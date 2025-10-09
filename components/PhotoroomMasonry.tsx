@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { gsap } from 'gsap';
 import NextImage from 'next/image';
+import { Skeleton } from '@heroui/skeleton';
 
 const useMedia = (
   queries: string[],
@@ -53,8 +54,13 @@ const useMeasure = <T extends HTMLElement>() => {
 };
 
 const resolvePresignedUrl = async (proxyUrl: string): Promise<string> => {
+  // The proxyUrl is already in the format /api/image?key=...
+  // We need to call this API to get the actual presigned URL
   try {
     const response = await fetch(proxyUrl);
+    if (!response.ok) {
+      return proxyUrl;
+    }
     const data = await response.json();
     if (data.success && data.url) {
       return data.url;
@@ -113,6 +119,11 @@ interface PhotoItem {
   id: number;
   url: string;
   filename: string;
+  uploadedAt?: string;
+  user?: {
+    name: string;
+    email: string;
+  };
 }
 
 interface GridItem extends PhotoItem {
@@ -152,6 +163,7 @@ export function PhotoroomMasonry({
   const [resolvedUrls, setResolvedUrls] = useState<{
     [key: string]: string;
   }>({});
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (items.length === 0) {
@@ -159,7 +171,15 @@ export function PhotoroomMasonry({
       return;
     }
 
-    preloadImages(items.map(i => i.url))
+    // Filter out placeholder items (they have empty URLs)
+    const realItems = items.filter(i => i.url && !(i as any).isPlaceholder);
+
+    if (realItems.length === 0) {
+      onImagesReady?.();
+      return;
+    }
+
+    preloadImages(realItems.map(i => i.url))
       .then(({ dimensions, resolvedUrls }) => {
         setImageDimensions(dimensions);
         setResolvedUrls(resolvedUrls);
@@ -174,7 +194,7 @@ export function PhotoroomMasonry({
   }, [items, onImagesReady]);
 
   const grid = useMemo<GridItem[]>(() => {
-    if (!width || Object.keys(imageDimensions).length === 0) {
+    if (!width) {
       return [];
     }
 
@@ -185,13 +205,21 @@ export function PhotoroomMasonry({
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = columnWidth * col;
 
+      // Check if this is a placeholder
+      const isPlaceholder = (child as any).isPlaceholder || !child.url;
+
       // Calculate height based on actual image dimensions
-      const imgDimensions = imageDimensions[child.url];
       let height = 300; // fallback height
 
-      if (imgDimensions) {
-        const aspectRatio = imgDimensions.height / imgDimensions.width;
-        height = columnWidth * aspectRatio;
+      if (isPlaceholder) {
+        // Use a fixed height for placeholders
+        height = columnWidth * 0.75; // 4:3 aspect ratio for placeholders
+      } else {
+        const imgDimensions = imageDimensions[child.url];
+        if (imgDimensions) {
+          const aspectRatio = imgDimensions.height / imgDimensions.width;
+          height = columnWidth * aspectRatio;
+        }
       }
 
       const y = colHeights[col];
@@ -205,7 +233,7 @@ export function PhotoroomMasonry({
   const hasMounted = useRef(false);
 
   useLayoutEffect(() => {
-    if (!imagesReady) return;
+    if (grid.length === 0) return;
 
     grid.forEach((item, index) => {
       const selector = `[data-key="${item.id}"]`;
@@ -216,7 +244,10 @@ export function PhotoroomMasonry({
         height: item.h,
       };
 
-      if (!hasMounted.current) {
+      const isPlaceholder = (item as any).isPlaceholder || !item.url;
+
+      if (!hasMounted.current && !isPlaceholder) {
+        // Only animate real images on first mount
         const initialState = {
           opacity: 0,
           x: item.x,
@@ -235,6 +266,7 @@ export function PhotoroomMasonry({
           delay: index * 0.05,
         });
       } else {
+        // Just position items
         gsap.to(selector, {
           ...animationProps,
           duration: 0.6,
@@ -245,7 +277,7 @@ export function PhotoroomMasonry({
     });
 
     hasMounted.current = true;
-  }, [grid, imagesReady]);
+  }, [grid]);
 
   const handleMouseEnter = (item: GridItem) => {
     const selector = `[data-key="${item.id}"]`;
@@ -288,29 +320,57 @@ export function PhotoroomMasonry({
     >
       {grid.map((item, index) => {
         const actualUrl = resolvedUrls[item.url] || item.url;
+        const isLoaded = loadedImages.has(item.id);
+        const isPlaceholder = (item as any).isPlaceholder || !item.url;
 
         return (
           <div
             key={item.id}
             data-key={item.id}
-            className="absolute will-change-transform z-10 p-2 cursor-pointer"
+            className={`absolute will-change-transform z-10 p-2 ${!isPlaceholder ? 'cursor-pointer' : ''}`}
             style={{
               width: item.w,
               height: item.h,
               opacity: 1,
             }}
-            onMouseEnter={() => handleMouseEnter(item)}
-            onMouseLeave={() => handleMouseLeave(item)}
-            onClick={() => onImageClick?.(index)}
+            onMouseEnter={() => !isPlaceholder && handleMouseEnter(item)}
+            onMouseLeave={() => !isPlaceholder && handleMouseLeave(item)}
+            onClick={() => !isPlaceholder && onImageClick?.(index)}
           >
-            <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 w-full h-full">
-              <NextImage
-                src={actualUrl}
-                alt={item.filename}
-                className="object-cover"
-                fill
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              />
+            <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
+              <div className="relative flex-1">
+                {(isPlaceholder || !isLoaded) && (
+                  <Skeleton className="w-full h-full rounded-t-lg" />
+                )}
+                {!isPlaceholder && actualUrl && (
+                  <NextImage
+                    src={actualUrl}
+                    alt={item.filename}
+                    className="object-cover"
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    onLoad={() => {
+                      setLoadedImages(prev => new Set(prev).add(item.id));
+                    }}
+                    style={{ opacity: isLoaded ? 1 : 0 }}
+                    unoptimized
+                  />
+                )}
+              </div>
+              {!isPlaceholder && item.user && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pt-8">
+                  <p className="text-white text-xs font-medium">
+                    Taken by {item.user.name.split(' ')[0]}
+                  </p>
+                  <p className="text-white/80 text-[10px]">
+                    {new Date(item.uploadedAt || '').toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );

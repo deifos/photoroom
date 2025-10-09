@@ -3,7 +3,7 @@ import { getAllImages } from '@/lib/db';
 
 export async function GET() {
   try {
-    const images = getAllImages();
+    const images = await getAllImages();
 
     return NextResponse.json({
       success: true,

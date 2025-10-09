@@ -3,9 +3,22 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@/lib/s3Client';
 import { addImage } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { auth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in to upload images' },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
 
@@ -46,12 +59,13 @@ export async function POST(request: NextRequest) {
       // Construct proxy URL that will generate presigned URLs
       const proxyUrl = `/api/image?key=${encodeURIComponent(r2Key)}`;
 
-      // Save to SQLite database
-      const imageId = addImage({
+      // Save to Supabase database via Prisma with userId
+      const imageId = await addImage({
         filename: file.name,
         r2Key,
         url: proxyUrl,
         size: file.size,
+        userId: session.user.id,
         uploadedAt: new Date().toISOString(),
       });
 

@@ -34,16 +34,22 @@ export const Navbar = () => {
           <NextLink className="flex justify-start items-center gap-2" href="/">
             <Camera className="w-6 h-6 text-rose-500" />
             <p className="font-serif text-xl font-light italic bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
-              FramesOfWonder
+              {siteConfig.name}
             </p>
           </NextLink>
         </NavbarBrand>
-        <NextLink
-          href="/about"
-          className="text-sm font-medium text-default-600 hover:text-foreground transition-colors"
-        >
-          About
-        </NextLink>
+        <ul className="hidden md:flex gap-6 items-center">
+          {siteConfig.navItems.map((item) => (
+            <li key={item.href}>
+              <NextLink
+                href={item.href}
+                className="text-sm font-medium text-default-600 hover:text-foreground transition-colors"
+              >
+                {item.label}
+              </NextLink>
+            </li>
+          ))}
+        </ul>
       </NavbarContent>
 
       <NavbarContent justify="end" className="gap-3 items-center">

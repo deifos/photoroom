@@ -5,6 +5,11 @@ import { addImage } from '@/lib/db';
 import { randomUUID } from 'crypto';
 import { auth } from '@/lib/auth';
 
+// Get whitelist of allowed emails from environment variable
+const ALLOWED_EMAILS = process.env.AUTHORIZED_EMAILS
+  ? process.env.AUTHORIZED_EMAILS.split(',').map(email => email.trim().toLowerCase())
+  : [];
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
@@ -16,6 +21,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized - Please sign in to upload images' },
         { status: 401 }
+      );
+    }
+
+    // Double-check email whitelist
+    if (!ALLOWED_EMAILS.includes(session.user.email.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Your email is not authorized to upload images' },
+        { status: 403 }
       );
     }
 

@@ -4,8 +4,10 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 
 import { prisma } from '../lib/prisma';
 
-
-// Initialize Polar client
+// Get whitelist of allowed emails from environment variable
+const ALLOWED_EMAILS = process.env.AUTHORIZED_EMAILS
+  ? process.env.AUTHORIZED_EMAILS.split(',').map(email => email.trim().toLowerCase())
+  : [];
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -31,13 +33,15 @@ export const auth = betterAuth({
   plugins: [
   ],
   socialProviders: {
-    // github: {
-    //   clientId: process.env.GITHUB_CLIENT_ID as string,
-    //   clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-    // },
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
+  },
+  async onAfterSignIn(user: any) {
+    // Check if user's email is in the whitelist
+    if (!ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+      throw new Error('This email is not authorized to access this application. Please contact the administrator.');
+    }
   },
 });

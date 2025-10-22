@@ -1,7 +1,7 @@
 import {
   Fira_Code as FontMono,
   Inter as FontSans,
-  Playfair_Display as FontSerif
+  Playfair_Display as FontSerif,
 } from "next/font/google";
 
 export const fontSans = FontSans({

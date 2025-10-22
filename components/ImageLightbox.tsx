@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import Image from 'next/image';
-import { Modal, ModalContent, ModalBody } from '@heroui/modal';
-import { Button } from '@heroui/button';
-import { X, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
+import { Modal, ModalContent, ModalBody } from "@heroui/modal";
+import { Button } from "@heroui/button";
+import { X, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 
 export interface LightboxImage {
   id: number;
@@ -62,20 +62,21 @@ export function ImageLightbox({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
-        case 'Escape':
+        case "Escape":
           onClose();
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           goToPrevious();
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           goToNext();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, goToPrevious, goToNext]);
 
   // Touch/Mouse handlers for zoom and pan
@@ -83,10 +84,11 @@ export function ImageLightbox({
     (e: React.TouchEvent | React.MouseEvent) => {
       e.preventDefault();
 
-      if ('touches' in e) {
+      if ("touches" in e) {
         // Touch event
         if (e.touches.length === 1) {
           const touch = e.touches[0];
+
           setDragStart({
             x: touch.clientX - position.x,
             y: touch.clientY - position.y,
@@ -103,8 +105,9 @@ export function ImageLightbox({
           const touch2 = e.touches[1];
           const distance = Math.sqrt(
             Math.pow(touch2.clientX - touch1.clientX, 2) +
-              Math.pow(touch2.clientY - touch1.clientY, 2)
+              Math.pow(touch2.clientY - touch1.clientY, 2),
           );
+
           startTouchRef.current = {
             x: (touch1.clientX + touch2.clientX) / 2,
             y: (touch1.clientY + touch2.clientY) / 2,
@@ -117,17 +120,18 @@ export function ImageLightbox({
         setIsDragging(true);
       }
     },
-    [position]
+    [position],
   );
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent | React.MouseEvent) => {
       e.preventDefault();
 
-      if ('touches' in e) {
+      if ("touches" in e) {
         if (e.touches.length === 1 && isDragging && scale > 1) {
           // Single touch drag (only when zoomed)
           const touch = e.touches[0];
+
           setPosition({
             x: touch.clientX - dragStart.x,
             y: touch.clientY - dragStart.y,
@@ -138,12 +142,13 @@ export function ImageLightbox({
           const touch2 = e.touches[1];
           const distance = Math.sqrt(
             Math.pow(touch2.clientX - touch1.clientX, 2) +
-              Math.pow(touch2.clientY - touch1.clientY, 2)
+              Math.pow(touch2.clientY - touch1.clientY, 2),
           );
 
           if (startTouchRef.current.distance > 0) {
             const scaleChange = distance / startTouchRef.current.distance;
             const newScale = Math.min(Math.max(scale * scaleChange, 0.5), 4);
+
             setScale(newScale);
 
             // Update start distance for next calculation
@@ -158,14 +163,14 @@ export function ImageLightbox({
         });
       }
     },
-    [isDragging, scale, dragStart]
+    [isDragging, scale, dragStart],
   );
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent | React.MouseEvent) => {
       setIsDragging(false);
 
-      if ('touches' in e && e.touches.length === 0) {
+      if ("touches" in e && e.touches.length === 0) {
         // Handle double tap to zoom
         const now = Date.now();
         const timeDiff = now - lastTap;
@@ -196,7 +201,7 @@ export function ImageLightbox({
         }
       }
     },
-    [lastTap, scale, goToPrevious, goToNext]
+    [lastTap, scale, goToPrevious, goToNext],
   );
 
   // Reset zoom
@@ -209,14 +214,14 @@ export function ImageLightbox({
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="full"
-      backdrop="opaque"
       hideCloseButton
+      backdrop="opaque"
       classNames={{
-        backdrop: 'bg-black/90',
+        backdrop: "bg-black/90",
       }}
+      isOpen={isOpen}
+      size="full"
+      onClose={onClose}
     >
       <ModalContent className="bg-transparent shadow-none">
         <ModalBody className="p-0 relative overflow-hidden">
@@ -227,14 +232,16 @@ export function ImageLightbox({
                 {currentIndex + 1} of {images.length}
               </span>
               {currentImage.filename && (
-                <span className="text-sm font-medium">{currentImage.filename}</span>
+                <span className="text-sm font-medium">
+                  {currentImage.filename}
+                </span>
               )}
             </div>
             <Button
               isIconOnly
+              className="text-white hover:bg-white/20"
               variant="light"
               onPress={onClose}
-              className="text-white hover:bg-white/20"
             >
               <X className="w-5 h-5" />
             </Button>
@@ -244,9 +251,9 @@ export function ImageLightbox({
           {currentIndex > 0 && (
             <Button
               isIconOnly
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
               variant="light"
               onPress={goToPrevious}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
             >
               <ChevronLeft className="w-6 h-6" />
             </Button>
@@ -255,9 +262,9 @@ export function ImageLightbox({
           {currentIndex < images.length - 1 && (
             <Button
               isIconOnly
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
               variant="light"
               onPress={goToNext}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:bg-white/20"
             >
               <ChevronRight className="w-6 h-6" />
             </Button>
@@ -267,31 +274,31 @@ export function ImageLightbox({
           <div
             ref={imageRef}
             className="w-full h-screen flex items-center justify-center cursor-grab active:cursor-grabbing"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             onMouseDown={handleTouchStart}
+            onMouseLeave={handleTouchEnd}
             onMouseMove={handleTouchMove}
             onMouseUp={handleTouchEnd}
-            onMouseLeave={handleTouchEnd}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            onTouchStart={handleTouchStart}
           >
             <div
               style={{
                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                transition: isDragging ? "none" : "transform 0.2s ease-out",
               }}
             >
               <Image
-                src={currentImage.url}
-                alt={currentImage.filename}
-                width={1200}
-                height={800}
-                className="max-w-[90vw] max-h-[80vh] object-contain pointer-events-none select-none border-8 rounded-lg border-white/10 shadow-lg"
-                unoptimized
                 priority
+                unoptimized
+                alt={currentImage.filename}
+                className="max-w-[90vw] max-h-[80vh] object-contain pointer-events-none select-none border-8 rounded-lg border-white/10 shadow-lg"
+                height={800}
+                src={currentImage.url}
                 style={{
-                  borderRadius: '1rem',
+                  borderRadius: "1rem",
                 }}
+                width={1200}
               />
             </div>
           </div>
@@ -301,10 +308,10 @@ export function ImageLightbox({
             {scale > 1 && (
               <Button
                 isIconOnly
-                variant="light"
-                onPress={handleReset}
                 className="text-white hover:bg-white/20"
                 title="Reset zoom"
+                variant="light"
+                onPress={handleReset}
               >
                 <RotateCw className="w-5 h-5" />
               </Button>

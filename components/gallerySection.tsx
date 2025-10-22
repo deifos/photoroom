@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Gallery } from './gallery';
+import { Gallery } from "./gallery";
 
 export function GallerySection() {
   return (

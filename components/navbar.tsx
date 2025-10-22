@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Navbar as HeroUINavbar,
@@ -21,9 +21,9 @@ import {
 import { User } from "@heroui/user";
 import { Button } from "@heroui/button";
 import NextLink from "next/link";
+import { Camera, LogOut, Menu } from "lucide-react";
 
 import { ThemeSwitch } from "@/components/theme-switch";
-import { Camera, LogOut, Menu } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { siteConfig } from "@/config/site";
 
@@ -39,9 +39,12 @@ export const Navbar = () => {
   return (
     <>
       <HeroUINavbar maxWidth="xl" position="sticky">
-        <NavbarContent justify="start" className="gap-6">
+        <NavbarContent className="gap-6" justify="start">
           <NavbarBrand as="li" className="gap-3 max-w-fit">
-            <NextLink className="flex justify-start items-center gap-2" href="/">
+            <NextLink
+              className="flex justify-start items-center gap-2"
+              href="/"
+            >
               <Camera className="w-6 h-6 text-rose-500" />
               <p className="font-serif text-xl font-light italic bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
                 {siteConfig.name}
@@ -52,8 +55,8 @@ export const Navbar = () => {
             {siteConfig.navItems.map((item) => (
               <li key={item.href}>
                 <NextLink
-                  href={item.href}
                   className="text-sm font-medium text-default-600 hover:text-foreground transition-colors"
+                  href={item.href}
                 >
                   {item.label}
                 </NextLink>
@@ -62,14 +65,13 @@ export const Navbar = () => {
           </ul>
         </NavbarContent>
 
-        <NavbarContent justify="end" className="gap-3 items-center">
+        <NavbarContent className="gap-3 items-center" justify="end">
           {session?.user && (
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
                 <div className="cursor-pointer flex items-center">
                   <User
                     as="button"
-                    name={session.user.name}
                     avatarProps={{
                       src: session.user.image || "/vlad-pfp.jpg",
                       size: "sm",
@@ -77,14 +79,15 @@ export const Navbar = () => {
                     classNames={{
                       name: "font-medium hidden md:block",
                     }}
+                    name={session.user.name}
                   />
                 </div>
               </DropdownTrigger>
               <DropdownMenu aria-label="User menu actions">
                 <DropdownItem
                   key="logout"
-                  color="danger"
                   className="text-danger"
+                  color="danger"
                   startContent={<LogOut className="w-4 h-4" />}
                   onPress={handleSignOut}
                 >
@@ -96,10 +99,10 @@ export const Navbar = () => {
           <ThemeSwitch />
           <Button
             isIconOnly
-            variant="light"
-            className="md:hidden"
-            onPress={onOpen}
             aria-label="Open menu"
+            className="md:hidden"
+            variant="light"
+            onPress={onOpen}
           >
             <Menu className="w-5 h-5" />
           </Button>
@@ -123,20 +126,20 @@ export const Navbar = () => {
                   {siteConfig.navItems.map((item) => (
                     <NextLink
                       key={item.href}
+                      className="text-lg font-medium text-default-600 hover:text-foreground transition-colors py-2"
                       href={item.href}
                       onClick={onClose}
-                      className="text-lg font-medium text-default-600 hover:text-foreground transition-colors py-2"
                     >
                       {item.label}
                     </NextLink>
                   ))}
                   {session?.user && (
                     <button
+                      className="flex items-center gap-2 text-lg font-medium text-danger hover:text-danger-600 transition-colors py-2"
                       onClick={() => {
                         handleSignOut();
                         onClose();
                       }}
-                      className="flex items-center gap-2 text-lg font-medium text-danger hover:text-danger-600 transition-colors py-2"
                     >
                       <LogOut className="w-5 h-5" />
                       Log Out

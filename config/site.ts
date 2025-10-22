@@ -2,7 +2,8 @@ export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
   name: "Frames of Wonder",
-  description: "Arena and Amelie explore the world, one beautiful moment at a time.",
+  description:
+    "Arena and Amelie explore the world, one beautiful moment at a time.",
   navItems: [
     {
       label: "Home",

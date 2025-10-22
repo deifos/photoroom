@@ -2,7 +2,7 @@ interface GoogleIconProps {
   className?: string;
 }
 
-export function GoogleIcon({ className = 'w-4 h-4' }: GoogleIconProps) {
+export function GoogleIcon({ className = "w-4 h-4" }: GoogleIconProps) {
   return (
     <svg
       className={className}

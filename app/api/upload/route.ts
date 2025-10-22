@@ -1,16 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '@/lib/s3Client';
-import { addImage } from '@/lib/db';
-import { randomUUID } from 'crypto';
-import { auth } from '@/lib/auth';
+import { randomUUID } from "crypto";
+
+import { NextRequest, NextResponse } from "next/server";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
+import { s3Client } from "@/lib/s3Client";
+import { addImage } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 // Configure route for longer execution time
 export const maxDuration = 60; // 60 seconds for Pro/Team plans, 10s for Hobby
 
 // Get whitelist of allowed emails from environment variable
 const ALLOWED_EMAILS = process.env.AUTHORIZED_EMAILS
-  ? process.env.AUTHORIZED_EMAILS.split(',').map(email => email.trim().toLowerCase())
+  ? process.env.AUTHORIZED_EMAILS.split(",").map((email) =>
+      email.trim().toLowerCase(),
+    )
   : [];
 
 // Maximum file size (10MB)
@@ -26,34 +30,31 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please sign in to upload images' },
-        { status: 401 }
+        { error: "Unauthorized - Please sign in to upload images" },
+        { status: 401 },
       );
     }
 
     // Double-check email whitelist
     if (!ALLOWED_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json(
-        { error: 'Your email is not authorized to upload images' },
-        { status: 403 }
+        { error: "Your email is not authorized to upload images" },
+        { status: 403 },
       );
     }
 
     const formData = await request.formData();
-    const files = formData.getAll('files') as File[];
+    const files = formData.getAll("files") as File[];
 
     if (!files || files.length === 0) {
-      return NextResponse.json(
-        { error: 'No files provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
     // Validate file count
     if (files.length > MAX_FILES_PER_REQUEST) {
       return NextResponse.json(
         { error: `Maximum ${MAX_FILES_PER_REQUEST} files allowed per request` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     for (const file of files) {
       try {
         // Validate file type
-        if (!file.type.startsWith('image/')) {
+        if (!file.type.startsWith("image/")) {
           errors.push(`${file.name}: Not an image file`);
           continue;
         }
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate unique filename
-        const fileExtension = file.name.split('.').pop();
+        const fileExtension = file.name.split(".").pop();
         const uniqueFilename = `${randomUUID()}.${fileExtension}`;
         const r2Key = `photoroom/images/${uniqueFilename}`;
 
@@ -123,8 +124,8 @@ export async function POST(request: NextRequest) {
     // Return response with errors if any
     if (uploadedImages.length === 0) {
       return NextResponse.json(
-        { error: 'No images were uploaded successfully', errors },
-        { status: 400 }
+        { error: "No images were uploaded successfully", errors },
+        { status: 400 },
       );
     }
 
@@ -134,10 +135,11 @@ export async function POST(request: NextRequest) {
       ...(errors.length > 0 && { errors }),
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error("Upload error:", error);
+
     return NextResponse.json(
-      { error: 'Failed to upload images' },
-      { status: 500 }
+      { error: "Failed to upload images" },
+      { status: 500 },
     );
   }
 }

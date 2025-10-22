@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { prisma } from "./prisma";
 
 export interface Image {
   id?: number;
@@ -12,7 +12,7 @@ export interface Image {
   userId: string;
 }
 
-export async function addImage(image: Omit<Image, 'id'>): Promise<number> {
+export async function addImage(image: Omit<Image, "id">): Promise<number> {
   const result = await prisma.image.create({
     data: {
       filename: image.filename,
@@ -22,16 +22,20 @@ export async function addImage(image: Omit<Image, 'id'>): Promise<number> {
       height: image.height || null,
       size: image.size,
       userId: image.userId,
-      uploadedAt: typeof image.uploadedAt === 'string'
-        ? new Date(image.uploadedAt)
-        : image.uploadedAt,
+      uploadedAt:
+        typeof image.uploadedAt === "string"
+          ? new Date(image.uploadedAt)
+          : image.uploadedAt,
     },
   });
 
   return result.id;
 }
 
-export async function getAllImages(limit?: number, offset?: number): Promise<any[]> {
+export async function getAllImages(
+  limit?: number,
+  offset?: number,
+): Promise<any[]> {
   const images = await prisma.image.findMany({
     include: {
       user: {
@@ -42,14 +46,14 @@ export async function getAllImages(limit?: number, offset?: number): Promise<any
       },
     },
     orderBy: {
-      uploadedAt: 'desc',
+      uploadedAt: "desc",
     },
     ...(limit && { take: limit }),
     ...(offset && { skip: offset }),
   });
 
   // Convert Date objects to ISO strings for consistency
-  return images.map(img => ({
+  return images.map((img) => ({
     ...img,
     uploadedAt: img.uploadedAt.toISOString(),
   }));

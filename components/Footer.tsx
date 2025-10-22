@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+
 import { XIcon } from "./icons/XIcon";
 
 export const Footer = () => {
@@ -10,11 +11,11 @@ export const Footer = () => {
         <div className="flex items-center gap-2">
           <span>Built by</span>
           <Image
-            src="/vlad-pfp.jpg"
             alt="Vlad"
-            width={24}
-            height={24}
             className="rounded-full"
+            height={24}
+            src="/vlad-pfp.jpg"
+            width={24}
           />
           <span className="font-medium">Vlad</span>
         </div>
@@ -25,10 +26,10 @@ export const Footer = () => {
         <div className="flex items-center gap-2">
           <span>I love you girls. You can find me on</span>
           <Link
-            href="https://x.com/deifosv"
-            target="_blank"
-            rel="noopener noreferrer"
             className="inline-flex items-center hover:text-foreground transition-colors"
+            href="https://x.com/deifosv"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             <XIcon className="w-4 h-4" />
           </Link>

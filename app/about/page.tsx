@@ -11,15 +11,25 @@ export default function AboutPage() {
 
           <div className="prose prose-lg dark:prose-invert max-w-none space-y-6 text-default-700 dark:text-default-600">
             <p className="leading-relaxed">
-              Arena and Amelie my wonderful girls, the world is filled with wonderful things and as time goes on many of those things are disappearing, the beautiful little details of things we humans use to build are being washed out by flat uninspired design, and as our lifestyles have changed so have the way we admire and value beauty.
+              Arena and Amelie my wonderful girls, the world is filled with
+              wonderful things and as time goes on many of those things are
+              disappearing, the beautiful little details of things we humans use
+              to build are being washed out by flat uninspired design, and as
+              our lifestyles have changed so have the way we admire and value
+              beauty.
             </p>
 
             <p className="leading-relaxed">
-              Frames of Wonder is a project I've created for you to have a space to collect and share how you see the world, to inspire you to go out and explore and capture the beauty that surrounds us, to feed your creative spirit and share with the world those frames which many of us now miss for going through the motions of life.
+              Frames of Wonder is a project I&apos;ve created for you to have a space
+              to collect and share how you see the world, to inspire you to go
+              out and explore and capture the beauty that surrounds us, to feed
+              your creative spirit and share with the world those frames which
+              many of us now miss for going through the motions of life.
             </p>
 
             <p className="leading-relaxed">
-              I hope you enjoy this project and fill up this space with thousands of pictures of the world we live in.
+              I hope you enjoy this project and fill up this space with
+              thousands of pictures of the world we live in.
             </p>
 
             <div className="flex items-center gap-3 mt-8 pt-8 border-t border-default-200">
@@ -28,11 +38,11 @@ export default function AboutPage() {
 
             <div className="flex items-center gap-3">
               <Image
-                src="/vlad-pfp.jpg"
                 alt="Your dad"
-                width={48}
-                height={48}
                 className="rounded-full"
+                height={48}
+                src="/vlad-pfp.jpg"
+                width={48}
               />
               <p className="font-medium text-lg">Your dad.</p>
             </div>

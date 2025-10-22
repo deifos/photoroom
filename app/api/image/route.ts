@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { generatePresignedUrl } from '@/lib/r2Utils';
+import { NextRequest, NextResponse } from "next/server";
+
+import { generatePresignedUrl } from "@/lib/r2Utils";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const key = searchParams.get('key');
+    const key = searchParams.get("key");
 
     if (!key) {
       return NextResponse.json(
-        { error: 'Missing key parameter' },
-        { status: 400 }
+        { error: "Missing key parameter" },
+        { status: 400 },
       );
     }
 
@@ -22,10 +23,11 @@ export async function GET(request: NextRequest) {
       url: presignedUrl,
     });
   } catch (error) {
-    console.error('Error generating presigned URL:', error);
+    console.error("Error generating presigned URL:", error);
+
     return NextResponse.json(
-      { error: 'Failed to generate image URL' },
-      { status: 500 }
+      { error: "Failed to generate image URL" },
+      { status: 500 },
     );
   }
 }

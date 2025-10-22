@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   useEffect,
@@ -7,29 +7,32 @@ import React, {
   useRef,
   useState,
   useCallback,
-} from 'react';
-import { gsap } from 'gsap';
-import NextImage from 'next/image';
-import { Skeleton } from '@heroui/skeleton';
+} from "react";
+import { gsap } from "gsap";
+import NextImage from "next/image";
+import { Skeleton } from "@heroui/skeleton";
 
 const useMedia = (
   queries: string[],
   values: number[],
-  defaultValue: number
+  defaultValue: number,
 ): number => {
   const get = useCallback(
-    () => values[queries.findIndex(q => matchMedia(q).matches)] ?? defaultValue,
-    [queries, values, defaultValue]
+    () =>
+      values[queries.findIndex((q) => matchMedia(q).matches)] ?? defaultValue,
+    [queries, values, defaultValue],
   );
 
   const [value, setValue] = useState<number>(get);
 
   useEffect(() => {
     const handler = () => setValue(get);
-    queries.forEach(q => matchMedia(q).addEventListener('change', handler));
+
+    queries.forEach((q) => matchMedia(q).addEventListener("change", handler));
+
     return () =>
-      queries.forEach(q =>
-        matchMedia(q).removeEventListener('change', handler)
+      queries.forEach((q) =>
+        matchMedia(q).removeEventListener("change", handler),
       );
   }, [queries, get]);
 
@@ -44,9 +47,12 @@ const useMeasure = <T extends HTMLElement>() => {
     if (!ref.current) return;
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
+
       setSize({ width, height });
     });
+
     ro.observe(ref.current);
+
     return () => ro.disconnect();
   }, []);
 
@@ -57,45 +63,48 @@ const useMeasure = <T extends HTMLElement>() => {
 const dimensionCache = new Map<string, { width: number; height: number }>();
 
 const preloadImages = async (
-  urls: string[]
+  urls: string[],
 ): Promise<{
-  dimensions: { [key: string]: { width: number; height: number } }
+  dimensions: { [key: string]: { width: number; height: number } };
 }> => {
   const dimensions: { [key: string]: { width: number; height: number } } = {};
 
   // Filter out already cached URLs
-  const uncachedUrls = urls.filter(url => !dimensionCache.has(url));
+  const uncachedUrls = urls.filter((url) => !dimensionCache.has(url));
 
   // Load images to get dimensions for uncached URLs
   if (uncachedUrls.length > 0) {
     await Promise.all(
       uncachedUrls.map(
         (url) =>
-          new Promise<void>(resolve => {
+          new Promise<void>((resolve) => {
             const img = new Image();
+
             img.src = url;
             img.onload = () => {
               const dim = {
                 width: img.naturalWidth,
                 height: img.naturalHeight,
               };
+
               dimensionCache.set(url, dim);
               dimensions[url] = dim;
               resolve();
             };
             img.onerror = () => {
               const fallback = { width: 800, height: 600 };
+
               dimensionCache.set(url, fallback);
               dimensions[url] = fallback;
               resolve();
             };
-          })
-      )
+          }),
+      ),
     );
   }
 
   // Add cached dimensions to results
-  urls.forEach(url => {
+  urls.forEach((url) => {
     if (dimensionCache.has(url)) {
       dimensions[url] = dimensionCache.get(url)!;
     }
@@ -135,13 +144,13 @@ export function PhotoroomMasonry({
 }: PhotoroomMasonryProps) {
   const columns = useMedia(
     [
-      '(min-width:1500px)',
-      '(min-width:1000px)',
-      '(min-width:600px)',
-      '(min-width:400px)',
+      "(min-width:1500px)",
+      "(min-width:1000px)",
+      "(min-width:600px)",
+      "(min-width:400px)",
     ],
     [5, 4, 3, 2],
-    1
+    1,
   );
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
@@ -154,25 +163,27 @@ export function PhotoroomMasonry({
   useEffect(() => {
     if (items.length === 0) {
       onImagesReady?.();
+
       return;
     }
 
     // Filter out placeholder items (they have empty URLs)
-    const realItems = items.filter(i => i.url && !(i as any).isPlaceholder);
+    const realItems = items.filter((i) => i.url && !(i as any).isPlaceholder);
 
     if (realItems.length === 0) {
       onImagesReady?.();
+
       return;
     }
 
-    preloadImages(realItems.map(i => i.url))
+    preloadImages(realItems.map((i) => i.url))
       .then(({ dimensions }) => {
         setImageDimensions(dimensions);
         setImagesReady(true);
         onImagesReady?.();
       })
-      .catch(error => {
-        console.error('Error preloading images:', error);
+      .catch((error) => {
+        console.error("Error preloading images:", error);
         setImagesReady(true);
         onImagesReady?.();
       });
@@ -186,7 +197,7 @@ export function PhotoroomMasonry({
     const colHeights = new Array(columns).fill(0);
     const columnWidth = width / columns;
 
-    return items.map(child => {
+    return items.map((child) => {
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = columnWidth * col;
 
@@ -201,14 +212,17 @@ export function PhotoroomMasonry({
         height = columnWidth * 0.75; // 4:3 aspect ratio for placeholders
       } else {
         const imgDimensions = imageDimensions[child.url];
+
         if (imgDimensions) {
           const aspectRatio = imgDimensions.height / imgDimensions.width;
+
           height = columnWidth * aspectRatio;
         }
       }
 
       const y = colHeights[col];
       const gap = 12; // Gap between images
+
       colHeights[col] += height + gap;
 
       return { ...child, x, y, w: columnWidth, h: height };
@@ -239,15 +253,15 @@ export function PhotoroomMasonry({
           y: item.y + 100,
           width: item.w,
           height: item.h,
-          filter: 'blur(10px)',
+          filter: "blur(10px)",
         };
 
         gsap.fromTo(selector, initialState, {
           opacity: 1,
           ...animationProps,
-          filter: 'blur(0px)',
+          filter: "blur(0px)",
           duration: 0.8,
-          ease: 'power3.out',
+          ease: "power3.out",
           delay: index * 0.05,
         });
       } else {
@@ -255,8 +269,8 @@ export function PhotoroomMasonry({
         gsap.to(selector, {
           ...animationProps,
           duration: 0.6,
-          ease: 'power3.out',
-          overwrite: 'auto',
+          ease: "power3.out",
+          overwrite: "auto",
         });
       }
     });
@@ -266,19 +280,21 @@ export function PhotoroomMasonry({
 
   const handleMouseEnter = (item: GridItem) => {
     const selector = `[data-key="${item.id}"]`;
+
     gsap.to(selector, {
       scale: 0.98,
       duration: 0.3,
-      ease: 'power2.out',
+      ease: "power2.out",
     });
   };
 
   const handleMouseLeave = (item: GridItem) => {
     const selector = `[data-key="${item.id}"]`;
+
     gsap.to(selector, {
       scale: 1,
       duration: 0.3,
-      ease: 'power2.out',
+      ease: "power2.out",
     });
   };
 
@@ -286,14 +302,17 @@ export function PhotoroomMasonry({
   const containerHeight = useMemo(() => {
     if (grid.length === 0) return 0;
     const colHeights = new Array(columns).fill(0);
-    grid.forEach(item => {
+
+    grid.forEach((item) => {
       const col = Math.floor((item.x || 0) / (width / columns));
       const validCol = Math.max(0, Math.min(col, columns - 1));
+
       colHeights[validCol] = Math.max(
         colHeights[validCol],
-        (item.y || 0) + (item.h || 0)
+        (item.y || 0) + (item.h || 0),
       );
     });
+
     return Math.max(...colHeights);
   }, [grid, columns, width]);
 
@@ -310,16 +329,16 @@ export function PhotoroomMasonry({
         return (
           <div
             key={item.id}
+            className={`absolute will-change-transform z-10 p-2 ${!isPlaceholder ? "cursor-pointer" : ""}`}
             data-key={item.id}
-            className={`absolute will-change-transform z-10 p-2 ${!isPlaceholder ? 'cursor-pointer' : ''}`}
             style={{
               width: item.w,
               height: item.h,
               opacity: 1,
             }}
+            onClick={() => !isPlaceholder && onImageClick?.(index)}
             onMouseEnter={() => !isPlaceholder && handleMouseEnter(item)}
             onMouseLeave={() => !isPlaceholder && handleMouseLeave(item)}
-            onClick={() => !isPlaceholder && onImageClick?.(index)}
           >
             <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
               <div className="relative flex-1">
@@ -328,30 +347,33 @@ export function PhotoroomMasonry({
                 )}
                 {!isPlaceholder && item.url && (
                   <NextImage
-                    src={item.url}
+                    fill
+                    unoptimized
                     alt={item.filename}
                     className="object-cover"
-                    fill
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                    onLoad={() => {
-                      setLoadedImages(prev => new Set(prev).add(item.id));
-                    }}
+                    src={item.url}
                     style={{ opacity: isLoaded ? 1 : 0 }}
-                    unoptimized
+                    onLoad={() => {
+                      setLoadedImages((prev) => new Set(prev).add(item.id));
+                    }}
                   />
                 )}
               </div>
               {!isPlaceholder && item.user && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pt-8">
                   <p className="text-white text-xs font-medium">
-                    Taken by {item.user.name.split(' ')[0]}
+                    Taken by {item.user.name.split(" ")[0]}
                   </p>
                   <p className="text-white/80 text-[10px]">
-                    {new Date(item.uploadedAt || '').toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                    {new Date(item.uploadedAt || "").toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      },
+                    )}
                   </p>
                 </div>
               )}

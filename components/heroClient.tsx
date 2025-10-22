@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useSession } from '@/lib/auth-client';
-import { HeroSection } from './heroSection';
+import { HeroSection } from "./heroSection";
+
+import { useSession } from "@/lib/auth-client";
 
 export function HeroClient() {
   const { data: session } = useSession();

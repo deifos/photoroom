@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   useEffect,
@@ -7,34 +7,37 @@ import React, {
   useRef,
   useState,
   useCallback,
-} from 'react';
-import { gsap } from 'gsap';
-import NextImage from 'next/image';
-import { Button } from '@heroui/button';
-import { Plus, Check } from 'lucide-react';
-import { addToast } from '@heroui/toast';
-import { useRouter } from 'next/navigation';
+} from "react";
+import { gsap } from "gsap";
+import NextImage from "next/image";
+import { Button } from "@heroui/button";
+import { Plus, Check } from "lucide-react";
+import { addToast } from "@heroui/toast";
+import { useRouter } from "next/navigation";
 
-import './background-gallery-masonry.css';
+import "./background-gallery-masonry.css";
 
 const useMedia = (
   queries: string[],
   values: number[],
-  defaultValue: number
+  defaultValue: number,
 ): number => {
   const get = useCallback(
-    () => values[queries.findIndex(q => matchMedia(q).matches)] ?? defaultValue,
-    [queries, values, defaultValue]
+    () =>
+      values[queries.findIndex((q) => matchMedia(q).matches)] ?? defaultValue,
+    [queries, values, defaultValue],
   );
 
   const [value, setValue] = useState<number>(get);
 
   useEffect(() => {
     const handler = () => setValue(get);
-    queries.forEach(q => matchMedia(q).addEventListener('change', handler));
+
+    queries.forEach((q) => matchMedia(q).addEventListener("change", handler));
+
     return () =>
-      queries.forEach(q =>
-        matchMedia(q).removeEventListener('change', handler)
+      queries.forEach((q) =>
+        matchMedia(q).removeEventListener("change", handler),
       );
   }, [queries, get]);
 
@@ -49,9 +52,12 @@ const useMeasure = <T extends HTMLElement>() => {
     if (!ref.current) return;
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
+
       setSize({ width, height });
     });
+
     ro.observe(ref.current);
+
     return () => ro.disconnect();
   }, []);
 
@@ -59,15 +65,16 @@ const useMeasure = <T extends HTMLElement>() => {
 };
 
 const preloadImages = async (
-  urls: string[]
+  urls: string[],
 ): Promise<{ [key: string]: { width: number; height: number } }> => {
   const dimensions: { [key: string]: { width: number; height: number } } = {};
 
   await Promise.all(
     urls.map(
-      src =>
-        new Promise<void>(resolve => {
+      (src) =>
+        new Promise<void>((resolve) => {
           const img = new Image();
+
           img.src = src;
           img.onload = () => {
             dimensions[src] = {
@@ -80,8 +87,8 @@ const preloadImages = async (
             dimensions[src] = { width: 300, height: 300 }; // fallback square
             resolve();
           };
-        })
-    )
+        }),
+    ),
   );
 
   return dimensions;
@@ -119,13 +126,13 @@ export function BackgroundGalleryMasonry({
   const router = useRouter();
   const columns = useMedia(
     [
-      '(min-width:1500px)',
-      '(min-width:1000px)',
-      '(min-width:600px)',
-      '(min-width:400px)',
+      "(min-width:1500px)",
+      "(min-width:1000px)",
+      "(min-width:600px)",
+      "(min-width:400px)",
     ],
     [5, 4, 3, 2],
-    1
+    1,
   );
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
@@ -142,22 +149,23 @@ export function BackgroundGalleryMasonry({
 
     const fetchUserLibrary = async () => {
       try {
-        const response = await fetch('/api/background-library');
+        const response = await fetch("/api/background-library");
+
         if (response.ok) {
           const data = await response.json();
           const libraryItems = data.backgroundLibraryItems || [];
-          
+
           // Get all sourcePublicIds from user's library
           const addedPublicIds = new Set<string>(
             libraryItems
               .filter((item: any) => item.sourcePublicId)
-              .map((item: any) => item.sourcePublicId as string)
+              .map((item: any) => item.sourcePublicId as string),
           );
-          
+
           setAddedIds(addedPublicIds);
         }
       } catch (error) {
-        console.error('Failed to fetch user library:', error);
+        console.error("Failed to fetch user library:", error);
       }
     };
 
@@ -167,17 +175,18 @@ export function BackgroundGalleryMasonry({
   useEffect(() => {
     if (items.length === 0) {
       onImagesReady?.();
+
       return;
     }
 
-    preloadImages(items.map(i => i.imageUrl))
-      .then(dimensions => {
+    preloadImages(items.map((i) => i.imageUrl))
+      .then((dimensions) => {
         setImageDimensions(dimensions);
         setImagesReady(true);
         onImagesReady?.();
       })
-      .catch(error => {
-        console.error('Background Gallery: Error preloading images:', error);
+      .catch((error) => {
+        console.error("Background Gallery: Error preloading images:", error);
         setImagesReady(true);
         onImagesReady?.();
       });
@@ -186,47 +195,51 @@ export function BackgroundGalleryMasonry({
   const handleAddToLibrary = useCallback(
     async (backgroundId: string) => {
       if (!isAuthenticated) {
-        router.push('/auth/sign-in');
+        router.push("/auth/sign-in");
+
         return;
       }
 
-      setAddingIds(prev => new Set(prev).add(backgroundId));
+      setAddingIds((prev) => new Set(prev).add(backgroundId));
 
       try {
-        const response = await fetch('/api/public-backgrounds/add-to-library', {
-          method: 'POST',
+        const response = await fetch("/api/public-backgrounds/add-to-library", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ publicBackgroundId: backgroundId }),
         });
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Failed to add background');
+
+          throw new Error(error.error || "Failed to add background");
         }
 
-        setAddedIds(prev => new Set(prev).add(backgroundId));
+        setAddedIds((prev) => new Set(prev).add(backgroundId));
         addToast({
-          title: 'Background added to your library!',
+          title: "Background added to your library!",
           timeout: 3000,
         });
       } catch (error) {
-        console.error('Failed to add background:', error);
+        console.error("Failed to add background:", error);
         addToast({
           title:
-            error instanceof Error ? error.message : 'Failed to add background',
+            error instanceof Error ? error.message : "Failed to add background",
           timeout: 3000,
         });
       } finally {
-        setAddingIds(prev => {
+        setAddingIds((prev) => {
           const next = new Set(prev);
+
           next.delete(backgroundId);
+
           return next;
         });
       }
     },
-    [isAuthenticated, router]
+    [isAuthenticated, router],
   );
 
   const grid = useMemo<GridItem[]>(() => {
@@ -237,7 +250,7 @@ export function BackgroundGalleryMasonry({
     const colHeights = new Array(columns).fill(0);
     const columnWidth = width / columns;
 
-    return items.map(child => {
+    return items.map((child) => {
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = columnWidth * col;
 
@@ -247,10 +260,12 @@ export function BackgroundGalleryMasonry({
 
       if (imgDimensions) {
         const aspectRatio = imgDimensions.height / imgDimensions.width;
+
         height = columnWidth * aspectRatio;
       }
 
       const y = colHeights[col];
+
       colHeights[col] += height + 16; // Add 16px gap (Pinterest-style)
 
       return { ...child, x, y, w: columnWidth, h: height };
@@ -278,23 +293,23 @@ export function BackgroundGalleryMasonry({
           y: item.y + 100,
           width: item.w,
           height: item.h,
-          filter: 'blur(10px)',
+          filter: "blur(10px)",
         };
 
         gsap.fromTo(selector, initialState, {
           opacity: 1,
           ...animationProps,
-          filter: 'blur(0px)',
+          filter: "blur(0px)",
           duration: 0.8,
-          ease: 'power3.out',
+          ease: "power3.out",
           delay: index * 0.05,
         });
       } else {
         gsap.to(selector, {
           ...animationProps,
           duration: 0.6,
-          ease: 'power3.out',
-          overwrite: 'auto',
+          ease: "power3.out",
+          overwrite: "auto",
         });
       }
     });
@@ -304,19 +319,21 @@ export function BackgroundGalleryMasonry({
 
   const handleMouseEnter = (item: GridItem) => {
     const selector = `[data-key="${item.id}"]`;
+
     gsap.to(selector, {
       scale: 0.95,
       duration: 0.3,
-      ease: 'power2.out',
+      ease: "power2.out",
     });
   };
 
   const handleMouseLeave = (item: GridItem) => {
     const selector = `[data-key="${item.id}"]`;
+
     gsap.to(selector, {
       scale: 1,
       duration: 0.3,
-      ease: 'power2.out',
+      ease: "power2.out",
     });
   };
 
@@ -324,14 +341,17 @@ export function BackgroundGalleryMasonry({
   const containerHeight = useMemo(() => {
     if (grid.length === 0) return 0;
     const colHeights = new Array(columns).fill(0);
-    grid.forEach(item => {
+
+    grid.forEach((item) => {
       const col = Math.floor((item.x || 0) / (width / columns));
       const validCol = Math.max(0, Math.min(col, columns - 1));
+
       colHeights[validCol] = Math.max(
         colHeights[validCol],
-        (item.y || 0) + (item.h || 0)
+        (item.y || 0) + (item.h || 0),
       );
     });
+
     return Math.max(...colHeights);
   }, [grid, columns, width]);
 
@@ -341,26 +361,26 @@ export function BackgroundGalleryMasonry({
       className="bg-gallery-list"
       style={{ height: `${containerHeight}px` }}
     >
-      {grid.map(item => {
+      {grid.map((item) => {
         const isAdding = addingIds.has(item.id);
         const isAdded = addedIds.has(item.id);
 
         return (
           <div
             key={item.id}
-            data-key={item.id}
             className="bg-gallery-item-wrapper"
+            data-key={item.id}
             onMouseEnter={() => handleMouseEnter(item)}
             onMouseLeave={() => handleMouseLeave(item)}
           >
             <div className="bg-gallery-item-img relative overflow-hidden rounded-lg">
               <NextImage
-                src={item.imageUrl}
+                fill
                 alt={item.title}
                 className="w-full h-full object-cover"
-                fill
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                style={{ display: 'block' }}
+                src={item.imageUrl}
+                style={{ display: "block" }}
               />
 
               {/* Premium badge */}
@@ -382,7 +402,7 @@ export function BackgroundGalleryMasonry({
                 )}
                 <div className="flex items-center justify-between gap-2">
                   <div className="hidden md:flex gap-1 flex-wrap">
-                    {item.tags.slice(0, 2).map(tag => (
+                    {item.tags.slice(0, 2).map((tag) => (
                       <span
                         key={tag}
                         className="bg-white/20 text-white text-xs px-2 py-0.5 rounded"
@@ -392,13 +412,11 @@ export function BackgroundGalleryMasonry({
                     ))}
                   </div>
                   <Button
-                    size="sm"
-                    color={isAdded ? 'success' : 'primary'}
-                    variant="solid"
-                    isLoading={isAdding}
-                    isDisabled={isAdded}
-                    onPress={() => handleAddToLibrary(item.id)}
                     className="min-w-0 ml-auto"
+                    color={isAdded ? "success" : "primary"}
+                    isDisabled={isAdded}
+                    isLoading={isAdding}
+                    size="sm"
                     startContent={
                       isAdded ? (
                         <Check className="w-4 h-4" />
@@ -406,8 +424,10 @@ export function BackgroundGalleryMasonry({
                         <Plus className="w-4 h-4" />
                       )
                     }
+                    variant="solid"
+                    onPress={() => handleAddToLibrary(item.id)}
                   >
-                    {isAdded ? 'Added' : 'Add to library'}
+                    {isAdded ? "Added" : "Add to library"}
                   </Button>
                 </div>
               </div>

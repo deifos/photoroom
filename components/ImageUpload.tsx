@@ -17,29 +17,57 @@ export function ImageUpload() {
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    const fileCount = files.length;
+    const filesArray = Array.from(files);
+    const fileCount = filesArray.length;
+
+    // Limit to 10 images at once
+    if (fileCount > 10) {
+      setProgress('Maximum 10 images allowed per upload. Please select fewer files.');
+      setTimeout(() => setProgress(''), 5000);
+      return;
+    }
+
     setUploading(true);
     setUploadingCount(fileCount);
     setProgress(`Uploading ${fileCount} image(s)...`);
 
     try {
-      const formData = new FormData();
-      Array.from(files).forEach((file) => {
-        formData.append('files', file);
-      });
+      // Upload in batches of 5 to prevent timeout
+      const BATCH_SIZE = 5;
+      const batches: File[][] = [];
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      for (let i = 0; i < filesArray.length; i += BATCH_SIZE) {
+        batches.push(filesArray.slice(i, i + BATCH_SIZE));
       }
 
-      const data = await response.json();
+      let totalUploaded = 0;
 
-      setProgress(`Successfully uploaded ${data.images.length} image(s)!`);
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        setProgress(`Uploading batch ${i + 1}/${batches.length} (${totalUploaded}/${fileCount} complete)...`);
+
+        const formData = new FormData();
+        batch.forEach((file) => {
+          formData.append('files', file);
+        });
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
+
+        const data = await response.json();
+        totalUploaded += data.images.length;
+
+        setUploadingCount(fileCount - totalUploaded);
+      }
+
+      setProgress(`Successfully uploaded ${totalUploaded} image(s)!`);
 
       // Reset count immediately after successful upload
       setUploadingCount(0);
@@ -51,8 +79,9 @@ export function ImageUpload() {
       // Gallery will auto-refresh via polling
     } catch (error) {
       console.error('Upload error:', error);
-      setProgress('Upload failed. Please try again.');
+      setProgress(error instanceof Error ? error.message : 'Upload failed. Please try again.');
       setUploadingCount(0);
+      setTimeout(() => setProgress(''), 5000);
     } finally {
       setUploading(false);
     }

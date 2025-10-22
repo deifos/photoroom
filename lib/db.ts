@@ -31,7 +31,7 @@ export async function addImage(image: Omit<Image, 'id'>): Promise<number> {
   return result.id;
 }
 
-export async function getAllImages(): Promise<any[]> {
+export async function getAllImages(limit?: number, offset?: number): Promise<any[]> {
   const images = await prisma.image.findMany({
     include: {
       user: {
@@ -44,6 +44,8 @@ export async function getAllImages(): Promise<any[]> {
     orderBy: {
       uploadedAt: 'desc',
     },
+    ...(limit && { take: limit }),
+    ...(offset && { skip: offset }),
   });
 
   // Convert Date objects to ISO strings for consistency
@@ -51,6 +53,10 @@ export async function getAllImages(): Promise<any[]> {
     ...img,
     uploadedAt: img.uploadedAt.toISOString(),
   }));
+}
+
+export async function getImagesCount(): Promise<number> {
+  return await prisma.image.count();
 }
 
 export async function getImageById(id: number): Promise<Image | null> {

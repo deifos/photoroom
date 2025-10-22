@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PhotoroomMasonry } from './photoroomMasonry';
 import { ImageLightbox } from './imageLightbox';
 import { useUpload } from '@/contexts/UploadContext';
+import { Button } from '@heroui/button';
 
 interface Image {
   id: number;
@@ -25,61 +26,60 @@ interface PlaceholderImage extends Image {
   isPlaceholder: true;
 }
 
+const IMAGES_PER_PAGE = 20;
+
 export function Gallery() {
-  const [images, setImages] = useState<Image[] | null>(null);
+  const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [resolvedImages, setResolvedImages] = useState<Image[]>([]);
   const { uploadingCount } = useUpload();
+  const previousUploadingCountRef = useRef(0);
 
-  useEffect(() => {
-    fetchImages();
-
-    // Poll for new images every 5 seconds
-    const interval = setInterval(fetchImages, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function fetchImages() {
+  const fetchImages = useCallback(async (offset: number = 0, append: boolean = false) => {
     try {
-      const response = await fetch('/api/images');
+      if (!append) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const response = await fetch(`/api/images?limit=${IMAGES_PER_PAGE}&offset=${offset}`);
       const data = await response.json();
+
       if (data.success) {
-        setImages(data.images);
+        setImages(prev => append ? [...prev, ...data.images] : data.images);
+        setHasMore(data.hasMore);
+        setTotalCount(data.totalCount);
       }
     } catch (error) {
       console.error('Failed to fetch images:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }
+  }, []);
 
-  // Resolve presigned URLs when lightbox opens
+  // Fetch images on mount only
   useEffect(() => {
-    if (!lightboxOpen || !images || images.length === 0) return;
+    fetchImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const resolveUrls = async () => {
-      const resolved = await Promise.all(
-        images.map(async (img) => {
-          try {
-            const response = await fetch(img.url);
-            const data = await response.json();
-            if (data.success && data.url) {
-              return { ...img, url: data.url };
-            }
-            return img;
-          } catch (error) {
-            console.error('Failed to resolve URL:', error);
-            return img;
-          }
-        })
-      );
-      setResolvedImages(resolved);
-    };
+  // Refresh when upload completes (uploadingCount goes from > 0 to 0)
+  useEffect(() => {
+    if (previousUploadingCountRef.current > 0 && uploadingCount === 0) {
+      fetchImages(0, false);
+    }
+    previousUploadingCountRef.current = uploadingCount;
+  }, [uploadingCount, fetchImages]);
 
-    resolveUrls();
-  }, [lightboxOpen, images]);
+  const loadMore = () => {
+    fetchImages(images.length, true);
+  };
 
   const handleImageClick = (index: number) => {
     setLightboxIndex(index);
@@ -124,11 +124,25 @@ export function Gallery() {
     <>
       <div className="w-full max-w-7xl mx-auto p-4">
         <PhotoroomMasonry items={displayItems} onImageClick={handleImageClick} />
+
+        {hasMore && (
+          <div className="flex justify-center mt-8 mb-4">
+            <Button
+              onPress={loadMore}
+              isLoading={loadingMore}
+              disabled={loadingMore}
+              size="lg"
+              className="bg-rose-500 text-white"
+            >
+              {loadingMore ? 'Loading...' : `Load More (${images.length} of ${totalCount})`}
+            </Button>
+          </div>
+        )}
       </div>
 
-      {resolvedImages.length > 0 && (
+      {images.length > 0 && (
         <ImageLightbox
-          images={resolvedImages}
+          images={images}
           currentIndex={lightboxIndex}
           isOpen={lightboxOpen}
           onClose={() => setLightboxOpen(false)}

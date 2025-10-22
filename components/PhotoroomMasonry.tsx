@@ -53,66 +53,55 @@ const useMeasure = <T extends HTMLElement>() => {
   return [ref, size] as const;
 };
 
-const resolvePresignedUrl = async (proxyUrl: string): Promise<string> => {
-  // The proxyUrl is already in the format /api/image?key=...
-  // We need to call this API to get the actual presigned URL
-  try {
-    const response = await fetch(proxyUrl);
-    if (!response.ok) {
-      return proxyUrl;
-    }
-    const data = await response.json();
-    if (data.success && data.url) {
-      return data.url;
-    }
-    return proxyUrl;
-  } catch (error) {
-    console.error('Failed to resolve presigned URL:', error);
-    return proxyUrl;
-  }
-};
+// Cache for image dimensions to prevent reloading
+const dimensionCache = new Map<string, { width: number; height: number }>();
 
 const preloadImages = async (
   urls: string[]
 ): Promise<{
-  dimensions: { [key: string]: { width: number; height: number } },
-  resolvedUrls: { [key: string]: string }
+  dimensions: { [key: string]: { width: number; height: number } }
 }> => {
   const dimensions: { [key: string]: { width: number; height: number } } = {};
-  const resolvedUrls: { [key: string]: string } = {};
 
-  // First, resolve all presigned URLs
-  const urlPromises = urls.map(async (proxyUrl) => {
-    const actualUrl = await resolvePresignedUrl(proxyUrl);
-    resolvedUrls[proxyUrl] = actualUrl;
-    return { proxyUrl, actualUrl };
+  // Filter out already cached URLs
+  const uncachedUrls = urls.filter(url => !dimensionCache.has(url));
+
+  // Load images to get dimensions for uncached URLs
+  if (uncachedUrls.length > 0) {
+    await Promise.all(
+      uncachedUrls.map(
+        (url) =>
+          new Promise<void>(resolve => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => {
+              const dim = {
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+              };
+              dimensionCache.set(url, dim);
+              dimensions[url] = dim;
+              resolve();
+            };
+            img.onerror = () => {
+              const fallback = { width: 800, height: 600 };
+              dimensionCache.set(url, fallback);
+              dimensions[url] = fallback;
+              resolve();
+            };
+          })
+      )
+    );
+  }
+
+  // Add cached dimensions to results
+  urls.forEach(url => {
+    if (dimensionCache.has(url)) {
+      dimensions[url] = dimensionCache.get(url)!;
+    }
   });
 
-  const resolvedUrlPairs = await Promise.all(urlPromises);
-
-  // Then load images with resolved URLs
-  await Promise.all(
-    resolvedUrlPairs.map(
-      ({ proxyUrl, actualUrl }) =>
-        new Promise<void>(resolve => {
-          const img = new Image();
-          img.src = actualUrl;
-          img.onload = () => {
-            dimensions[proxyUrl] = {
-              width: img.naturalWidth,
-              height: img.naturalHeight,
-            };
-            resolve();
-          };
-          img.onerror = () => {
-            dimensions[proxyUrl] = { width: 800, height: 600 }; // fallback
-            resolve();
-          };
-        })
-    )
-  );
-
-  return { dimensions, resolvedUrls };
+  return { dimensions };
 };
 
 interface PhotoItem {
@@ -160,9 +149,6 @@ export function PhotoroomMasonry({
   const [imageDimensions, setImageDimensions] = useState<{
     [key: string]: { width: number; height: number };
   }>({});
-  const [resolvedUrls, setResolvedUrls] = useState<{
-    [key: string]: string;
-  }>({});
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -180,9 +166,8 @@ export function PhotoroomMasonry({
     }
 
     preloadImages(realItems.map(i => i.url))
-      .then(({ dimensions, resolvedUrls }) => {
+      .then(({ dimensions }) => {
         setImageDimensions(dimensions);
-        setResolvedUrls(resolvedUrls);
         setImagesReady(true);
         onImagesReady?.();
       })
@@ -319,7 +304,6 @@ export function PhotoroomMasonry({
       style={{ height: `${containerHeight}px` }}
     >
       {grid.map((item, index) => {
-        const actualUrl = resolvedUrls[item.url] || item.url;
         const isLoaded = loadedImages.has(item.id);
         const isPlaceholder = (item as any).isPlaceholder || !item.url;
 
@@ -342,9 +326,9 @@ export function PhotoroomMasonry({
                 {(isPlaceholder || !isLoaded) && (
                   <Skeleton className="w-full h-full rounded-t-lg" />
                 )}
-                {!isPlaceholder && actualUrl && (
+                {!isPlaceholder && item.url && (
                   <NextImage
-                    src={actualUrl}
+                    src={item.url}
                     alt={item.filename}
                     className="object-cover"
                     fill

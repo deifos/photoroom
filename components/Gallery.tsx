@@ -21,11 +21,6 @@ interface Image {
   };
 }
 
-// Placeholder for uploading images
-interface PlaceholderImage extends Image {
-  isPlaceholder: true;
-}
-
 const IMAGES_PER_PAGE = 20;
 
 export function Gallery() {

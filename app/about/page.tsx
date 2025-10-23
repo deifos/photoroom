@@ -1,4 +1,6 @@
+import { XIcon } from "@/components/icons/XIcon";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AboutPage() {
   return (
@@ -45,6 +47,34 @@ export default function AboutPage() {
                 width={48}
               />
               <p className="font-medium text-lg">Your dad.</p>
+
+              
+            </div>
+            <div>
+              <p>
+                This project was inspired by this video from the Cultural Tutor on &nbsp;  
+                <Link
+                  className="inline-flex items-center hover:text-foreground transition-colors"
+                  href="https://x.com/culturaltutor"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <XIcon className="w-4 h-4" />
+                </Link>
+
+                
+              </p>
+            </div>
+            <div className="mt-6">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-lg">
+                <iframe
+                  title="Frames of Wonder Inspiration"
+                  src="https://www.youtube.com/embed/tWYxrowovts"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="absolute inset-0 h-full w-full"
+                />
+              </div>
             </div>
           </div>
         </div>

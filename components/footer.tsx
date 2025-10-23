@@ -24,7 +24,7 @@ export const Footer = () => {
           <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
         </div>
         <div className="flex items-center gap-2">
-          <span>I love you girls. You can find me on</span>
+          <span>I love you girls.</span>
           <Link
             className="inline-flex items-center hover:text-foreground transition-colors"
             href="https://x.com/deifosv"

@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins";
+import { APIError } from "better-auth/api";
 
 import { prisma } from "../lib/prisma";
 
@@ -41,12 +42,29 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
-  async onAfterSignIn(user: any) {
-    // Check if user's email is in the whitelist
-    if (!ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
-      throw new Error(
-        "This email is not authorized to access this application. Please contact the administrator.",
-      );
-    }
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user: any, ctx: any) => {
+          console.log(`User creation attempt by: ${user.email}`);
+          // Check if user's email is in the whitelist before creating user in database
+          if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+            console.log(`Unauthorized user creation attempt by: ${user.email}`);
+            
+            throw new APIError("FORBIDDEN", {
+              message: "This email is not authorized to access this application. Please contact the administrator.",
+            });
+          }
+          
+          // Return the user data to proceed with creation
+          return {
+            data: user,
+          };
+        },
+        after: async (user: any) => {
+          console.log(`New authorized user created: ${user.email}`);
+        },
+      },
+    },
   },
 });

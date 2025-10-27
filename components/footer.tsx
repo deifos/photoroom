@@ -21,10 +21,10 @@ export const Footer = () => {
         </div>
         <div className="flex items-center gap-2">
           <span>for Arena and Amelie.</span>
-          <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+          
         </div>
         <div className="flex items-center gap-2">
-          <span>I love you girls.</span>
+          <span>I </span><Heart className="w-4 h-4 text-pink-500 fill-pink-500" /> you girls.
           <Link
             className="inline-flex items-center hover:text-foreground transition-colors"
             href="https://x.com/deifosv"
@@ -32,6 +32,7 @@ export const Footer = () => {
             target="_blank"
           >
             <XIcon className="w-4 h-4" />
+            
           </Link>
         </div>
       </div>

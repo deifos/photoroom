@@ -36,6 +36,16 @@ export const Navbar = () => {
     window.location.reload();
   };
 
+  // Get user initials from name
+  const getUserInitials = (name?: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <>
       <HeroUINavbar maxWidth="xl" position="sticky">
@@ -73,8 +83,10 @@ export const Navbar = () => {
                   <User
                     as="button"
                     avatarProps={{
-                      src: session.user.image || "/vlad-pfp.jpg",
+                      src: session.user.image || undefined,
                       size: "sm",
+                      name: session.user.image ? undefined : getUserInitials(session.user.name),
+                      showFallback: true,
                     }}
                     classNames={{
                       name: "font-medium hidden md:block",

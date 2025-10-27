@@ -4,12 +4,21 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { Modal, ModalContent, ModalBody } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { X, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, RotateCw, Trash2 } from "lucide-react";
+import {
+  Modal as ConfirmModal,
+  ModalContent as ConfirmModalContent,
+  ModalHeader,
+  ModalBody as ConfirmModalBody,
+  ModalFooter,
+  useDisclosure,
+} from "@heroui/modal";
 
 export interface LightboxImage {
   id: number;
   url: string;
   filename: string;
+  userId: string;
 }
 
 interface ImageLightboxProps {
@@ -18,6 +27,8 @@ interface ImageLightboxProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigate?: (index: number) => void;
+  currentUserId?: string;
+  onDelete?: (imageId: number) => void;
 }
 
 export function ImageLightbox({
@@ -26,16 +37,21 @@ export function ImageLightbox({
   isOpen,
   onClose,
   onNavigate,
+  currentUserId,
+  onDelete,
 }: ImageLightboxProps) {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [lastTap, setLastTap] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
   const startTouchRef = useRef({ x: 0, y: 0, distance: 0 });
+  const { isOpen: isConfirmOpen, onOpen, onClose: onConfirmClose } = useDisclosure();
 
   const currentImage = images[currentIndex];
+  const isOwner = currentUserId && currentImage?.userId === currentUserId;
 
   // Reset zoom and position when image changes
   useEffect(() => {
@@ -210,19 +226,49 @@ export function ImageLightbox({
     setPosition({ x: 0, y: 0 });
   }, []);
 
+  // Delete handler
+  const handleDeleteClick = useCallback(() => {
+    onOpen();
+  }, [onOpen]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!currentImage || !onDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/images/${currentImage.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete image");
+      }
+
+      onConfirmClose();
+      onClose();
+      onDelete(currentImage.id);
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      alert("Failed to delete image. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [currentImage, onDelete, onConfirmClose, onClose]);
+
   if (!currentImage) return null;
 
   return (
-    <Modal
-      hideCloseButton
-      backdrop="opaque"
-      classNames={{
-        backdrop: "bg-black/90",
-      }}
-      isOpen={isOpen}
-      size="full"
-      onClose={onClose}
-    >
+    <>
+      <Modal
+        hideCloseButton
+        backdrop="opaque"
+        classNames={{
+          backdrop: "bg-black/90",
+        }}
+        isOpen={isOpen}
+        size="full"
+        onClose={onClose}
+      >
       <ModalContent className="bg-transparent shadow-none">
         <ModalBody className="p-0 relative overflow-hidden">
           {/* Header with controls */}
@@ -237,14 +283,26 @@ export function ImageLightbox({
                 </span>
               )}
             </div>
-            <Button
-              isIconOnly
-              className="text-white hover:bg-white/20"
-              variant="light"
-              onPress={onClose}
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <Button
+                  isIconOnly
+                  className="text-white hover:bg-red-500/30"
+                  variant="light"
+                  onPress={handleDeleteClick}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+              )}
+              <Button
+                isIconOnly
+                className="text-white hover:bg-white/20"
+                variant="light"
+                onPress={onClose}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Navigation buttons */}
@@ -324,6 +382,39 @@ export function ImageLightbox({
           </div>
         </ModalBody>
       </ModalContent>
-    </Modal>
+      </Modal>
+
+      {/* Confirmation dialog */}
+      <ConfirmModal isOpen={isConfirmOpen} onClose={onConfirmClose}>
+        <ConfirmModalContent>
+          <ModalHeader className="flex flex-col gap-1">Delete Image</ModalHeader>
+          <ConfirmModalBody>
+            <p>Are you sure you want to delete this image? This action cannot be undone.</p>
+            {currentImage?.filename && (
+              <p className="text-sm text-gray-500 mt-2">
+                File: {currentImage.filename}
+              </p>
+            )}
+          </ConfirmModalBody>
+          <ModalFooter>
+            <Button
+              color="default"
+              variant="light"
+              onPress={onConfirmClose}
+              isDisabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="danger"
+              onPress={handleConfirmDelete}
+              isLoading={isDeleting}
+            >
+              Delete
+            </Button>
+          </ModalFooter>
+        </ConfirmModalContent>
+      </ConfirmModal>
+    </>
   );
 }

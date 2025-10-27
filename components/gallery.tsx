@@ -7,6 +7,7 @@ import { PhotoroomMasonry } from "./photoroomMasonry";
 import { ImageLightbox } from "./imageLightbox";
 
 import { useUpload } from "@/contexts/UploadContext";
+import { useSession } from "@/lib/auth-client";
 
 interface Image {
   id: number;
@@ -17,6 +18,7 @@ interface Image {
   height?: number;
   size: number;
   uploadedAt: string;
+  userId: string;
   user?: {
     name: string;
     email: string;
@@ -35,6 +37,7 @@ export function Gallery() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const { uploadingCount } = useUpload();
   const previousUploadingCountRef = useRef(0);
+  const { data: session } = useSession();
 
   const fetchImages = useCallback(
     async (offset: number = 0, append: boolean = false) => {
@@ -88,6 +91,12 @@ export function Gallery() {
     setLightboxIndex(index);
     setLightboxOpen(true);
   };
+
+  const handleDelete = useCallback((imageId: number) => {
+    // Remove the deleted image from the list
+    setImages((prev) => prev.filter((img) => img.id !== imageId));
+    setTotalCount((prev) => prev - 1);
+  }, []);
 
   if (loading) {
     return (
@@ -154,9 +163,11 @@ export function Gallery() {
       {images.length > 0 && (
         <ImageLightbox
           currentIndex={lightboxIndex}
+          currentUserId={session?.user?.id}
           images={images}
           isOpen={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
+          onDelete={handleDelete}
           onNavigate={setLightboxIndex}
         />
       )}
